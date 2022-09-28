@@ -105,12 +105,25 @@ class TinyImageNetDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+def create_dataloader(folder: str, args) -> torch.utils.data.DataLoader:
+    dataset = TinyImageNetDataset(folder)
+
+    data_loader = torch.utils.data.DataLoader(
+                                                dataset,
+                                                batch_size=args.batch_size,
+                                                num_workers=args.num_workers,
+                                                drop_last=False,
+                                                shuffle=True
+                                            )
+
+    return data_loader, dataset
+
 
 # Testing the dataset works with the dataloader class works
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
 
-    dataset = TinyImageNetDataset('image_data/train_label')
+    dataset = TinyImageNetDataset('image_data/all_label')
 
     d = dataset.__getitem__(0)
     print(d['image'].shape)
@@ -122,5 +135,5 @@ if __name__ == '__main__':
     dataloader = DataLoader(dataset, batch_size=10, shuffle=True)
 
     for batch in dataloader:
-        print(batch['X'].shape, batch['y'].shape)
+        print(np.array(batch['image']).shape, batch['X'].shape, batch['y'].shape)
         break

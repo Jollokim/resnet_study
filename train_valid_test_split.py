@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('NI train valid test splitter', add_help=False)
+    parser = argparse.ArgumentParser('train valid test splitter', add_help=False)
 
     # directory parameters:
     parser.add_argument('--root_dir', type=str, required=True, help='root dir of NI dataset')
