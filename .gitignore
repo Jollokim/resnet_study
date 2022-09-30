@@ -1,3 +1,10 @@
+# Other
+*.out
+*.sh
+*.sbatch
+image_data/
+logs_and_weights/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

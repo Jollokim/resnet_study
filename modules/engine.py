@@ -35,8 +35,12 @@ def train_one_epoch(model: torch.nn.Module, dataloader: DataLoader, optimizer: O
         # passing images in batch through model
         outputs = model(X)
 
+        # print(outputs.shape)
+        # print(y.shape)
+
         # calculating loss and backpropagation the loss through the network
         loss = F.cross_entropy(outputs, y)
+        
         loss.backward()
 
         # adjusting weight according to backpropagation
@@ -89,14 +93,3 @@ def test_accuracy(model: torch.nn.Module, dataset: TinyImageNetDataset, device: 
     return accuracy
 
 
-# Testing that test_accuracy work correct
-if __name__ == '__main__':
-    from model import Alexnet
-
-    model = Alexnet(2, 3)
-    dataset = AlexDataset('image_data/DD_resized/test')
-
-    acc = test_accuracy(model, dataset)
-
-    print()
-    print(acc)

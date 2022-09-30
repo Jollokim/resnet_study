@@ -2,10 +2,15 @@ import torch
 
 import torch.nn as nn
 
+from timm.models.registry import register_model
+
+__all__ = [
+    'ResNetV1'
+]
+
 class ResBlock(nn.Module):
     def __init__(self, in_channels, out_channels, downsample):
         super().__init__()
-        self.downsample = downsample
         if downsample:
             self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1)
             self.shortcut = nn.Sequential(
@@ -21,25 +26,18 @@ class ResBlock(nn.Module):
         self.bn2 = nn.BatchNorm2d(out_channels)
 
     def forward(self, input):
-        print(self.downsample)
-        print('input', input.shape)
         shortcut = self.shortcut(input)
         input = nn.ReLU()(self.bn1(self.conv1(input)))
         input = nn.ReLU()(self.bn2(self.conv2(input)))
         input = input + shortcut
-
-        print('conv input', input.shape)
-        print('shortcut', shortcut.shape)
-        print()
         return nn.ReLU()(input)
 
-
-class ResNetV1(nn.Module):
-    def __init__(self, in_channels, resblock, outputs=1000):
+class ResNet18(nn.Module):
+    def __init__(self, in_channels, resblock, outputs=200):
         super().__init__()
         self.layer0 = nn.Sequential(
-            nn.Conv2d(in_channels, 64, kernel_size=3, stride=1),
-            nn.MaxPool2d(kernel_size=3, stride=1),
+            nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU()
         )
@@ -75,21 +73,26 @@ class ResNetV1(nn.Module):
         input = self.layer3(input)
         input = self.layer4(input)
         input = self.gap(input)
-        input = torch.flatten(input)
+        input = torch.flatten(input, start_dim=1)
+
+        # print(input.shape)
+
         input = self.fc(input)
 
         return input
+
+@register_model
+def ResNetV1(pretrained=False, n_classes=200, **kwargs):
+    model = ResNet18(3, ResBlock, n_classes)
+
+    return model
 
 if __name__ == '__main__':
     from torchsummary import summary
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = ResNetV1(3, ResBlock).to(device)
-
-
+    model = ResNet18(3, ResBlock, 200).to(device)
 
     summary(model, input_size=(3, 64, 64))
-
-
 
     X = torch.randn((1, 3, 64, 64))
