@@ -4,6 +4,7 @@
 *.sbatch
 image_data/
 logs_and_weights/
+HPO_optimizer/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

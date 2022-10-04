@@ -48,8 +48,8 @@ def pad_crop_img(img, pad):
     y = random.randint(0, pad*2)
 
     print(x, y)
-    x = 16
-    y = 16
+    # x = 16
+    # y = 16
 
     return img_pad[x:64+x, y:64+y] 
 

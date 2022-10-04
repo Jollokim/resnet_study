@@ -5,8 +5,7 @@ import torch.nn as nn
 from timm.models.registry import register_model
 
 __all__ = [
-    'ResNet18Projection',
-    'ResNet18Softer'
+    'ResNet56Projection'
 ]
 
 # Inspired by the implementation of: https://towardsdev.com/implement-resnet-with-pytorch-a9fb40a77448
@@ -36,47 +35,7 @@ class ResBlockProjection(nn.Module):
         return torch.relu(x)
 
 
-class ResNetSofter(nn.Module):
-    def __init__(self, in_channels, resblock, outputs=200):
-        super().__init__()
-        
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, 16, kernel_size=3, stride=1, padding='same'),
-
-            # res blocks
-            resblock(16, 16, downsample=False),
-            resblock(16, 16, downsample=False),
-
-            resblock(16, 32, downsample=True),
-            resblock(32, 32, downsample=False),
-
-            resblock(32, 64, downsample=True),
-            resblock(64, 64, downsample=False),
-
-
-            # pooling
-            torch.nn.AdaptiveAvgPool2d(1),
-
-            # flatten output
-            nn.Flatten()
-
-        )
-        
-        
-        self.fc = torch.nn.Linear(64, outputs)
-
-    def forward(self, x):
-
-        x = self.conv(x)
-
-        x = self.fc(x)
-
-        torch.softmax(x, 1)
-
-        return x
-
-
-class ResNetSofterBrute(nn.Module):
+class ResNet56(nn.Module):
     def __init__(self, in_channels, resblock, outputs=200):
         super().__init__()
         
@@ -136,64 +95,9 @@ class ResNetSofterBrute(nn.Module):
 
         return x
 
-
-class ResNet18(nn.Module):
-    def __init__(self, in_channels, resblock, outputs=200):
-        super().__init__()
-        
-        self.conv = nn.Sequential(
-            # nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3),
-            # nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-            # nn.BatchNorm2d(64),
-            # nn.ReLU(),
-
-            # res blocks
-            resblock(in_channels, 64, downsample=True),
-            resblock(64, 64, downsample=False),
-            resblock(64, 128, downsample=True),
-            resblock(128, 128, downsample=False),
-            resblock(128, 256, downsample=True),
-            resblock(256, 256, downsample=False),
-            resblock(256, 512, downsample=True),
-            resblock(512, 512, downsample=False),
-
-            # pooling
-            torch.nn.AdaptiveAvgPool2d(1),
-
-            # flatten output
-            nn.Flatten()
-
-        )
-        
-        
-        self.fc = torch.nn.Linear(512, outputs)
-
-    def forward(self, x):
-
-        x = self.conv(x)
-
-        x = self.fc(x)
-
-        torch.softmax(x, 1)
-
-        return x
-
-
 @register_model
-def ResNet18Projection(pretrained=False, n_classes=200, **kwargs):
-    model = ResNet18(3, ResBlockProjection)
-
-    return model
-
-@register_model
-def ResNet18Softer(pretrained=False, n_classes=200, **kwargs):
-    model = ResNetSofter(3, ResBlockProjection)
-
-    return model
-
-@register_model
-def ResNet18SofterBrute(pretrained=False, n_classes=200, **kwargs):
-    model = ResNetSofterBrute(3, ResBlockProjection)
+def ResNet56Projection(pretrained=False, n_classes=200, **kwargs):
+    model = ResNet56(3, ResBlockProjection)
 
     return model
 
@@ -201,6 +105,6 @@ if __name__ == '__main__':
     from torchsummary import summary
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = ResNetSofter(3, ResBlockProjection).to(device)
+    model = ResNet56(3, ResBlockProjection).to(device)
 
     summary(model, input_size=(3, 64, 64))

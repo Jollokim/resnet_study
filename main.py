@@ -1,13 +1,14 @@
 import argparse
 import os
 import random
+from tabnanny import verbose
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
 from timm import create_model
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import LinearLR
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
@@ -42,12 +43,8 @@ def get_args_parser():
                         help='number of samples per iteration in the epoch')
     parser.add_argument('--num_workers', default=5, type=int)
 
-    # optimizer settings
-    parser.add_argument('--lr', type=float, default=0.001,
-                        help='The learning rate')
-
     # trainng related parameters
-    parser.add_argument('--epochs', type=int, default=50,
+    parser.add_argument('--epochs', type=int, default=30,
                         help='Number of epochs to train for')
 
     # logging related parameters
@@ -63,6 +60,29 @@ def get_args_parser():
     parser.add_argument('--valid_every', type=int, default=10,
                         help='validate every x epoch')
 
+    # optimizer settings
+    parser.add_argument('--lr', type=float, default=0.001,
+                        help='The learning rate')
+    parser.add_argument('--beta1', type=float, default=0.9,
+                        help='')
+    parser.add_argument('--beta2', type=float, default=0.999,
+                        help='')
+    parser.add_argument('--eps', type=float, default=1e-8,
+                        help='')
+    parser.add_argument('--weight_decay', type=float, default=0,
+                        help='')
+
+    # scheduler settings
+    parser.add_argument('--start_factor', type=float, default=0.3,
+                        help='')
+    parser.add_argument('--end_factor', type=float, default=1,
+                        help='')
+
+    # seed
+    parser.add_argument('--seed', type=int, default=1,
+                        help='')
+
+
     return parser
 
 
@@ -71,9 +91,9 @@ def main(args):
     # arg_parser = argparse.ArgumentParser('Main', parents=[get_args_parser()])
     # args = arg_parser.parse_args()
 
-    torch.manual_seed(1)
-    np.random.seed(1)
-    random.seed(1)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    random.seed(args.seed)
 
     # default `log_dir` is "runs" - we'll be more specific here
     writer = SummaryWriter(f'{args.log_path}/{args.name}')
@@ -92,13 +112,14 @@ def main(args):
         dataloader_train, _ = create_dataloader(args.train_folder, args)
 
         if not args.no_validate:
-            dataloader_valid, dataset_valid = create_dataloader(args.valid_folder, args)
+            _, dataset_valid = create_dataloader(args.valid_folder, args)
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-        scheduler = ReduceLROnPlateau(optimizer, 'max', 0.95, 3, 0.005, verbose=True)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2), eps=args.eps, weight_decay=args.weight_decay)
+        scheduler = LinearLR(optimizer, args.start_factor, args.end_factor, args.epochs, verbose=True)
 
         mx_acc = 0
         best_epoch = 0
+        early_stopping_c = 0
         for epoch in range(1, args.epochs+1):
             loss = train_one_epoch(model, dataloader_train, optimizer, epoch, device)
             writer.add_scalar('Mean loss over epoch', loss, epoch)
@@ -116,25 +137,43 @@ def main(args):
                     best_epoch = epoch
                     mx_acc = acc_current
 
+                    early_stopping_c = 0
+
+                    args.pretrained_weights = f'{args.log_path}/{args.name}/epoch{best_epoch}.pt'
                     torch.save(model.state_dict(), f'{args.log_path}/{args.name}/epoch{best_epoch}.pt')
+                else:
+                    early_stopping_c += 1
+                    if early_stopping_c == 3:
+                        print('No improvement! Stopping.')
+                        return
 
-            scheduler.step(acc_current)
+
             writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch)
+            scheduler.step()
 
-        torch.save(model.state_dict(), f'{args.log_path}/{args.name}/epochs.pt')
-
-            
-            
+        torch.save(model.state_dict(), f'{args.log_path}/{args.name}/end.pt')
 
     def testing():
-        pass
+        _, dataset_test = create_dataloader(args.test_folder, args)
+
+        # TODO: load model weights
+        model.load_state_dict(torch.load(args.pretrained_weights))
+        acc = test_accuracy(model, dataset_test, device)
+
+        print('test accuracy:', acc)
+
+        with open(f'{args.log_path}/{args.name}/test_results.txt', 'a') as f:
+            f.write(str(acc))
+
+
+
     
     training() if args.mode == 'train' else testing()
 
 
 if __name__ == '__main__':
     # creates commandline parser
-    arg_parser = argparse.ArgumentParser('Alexnet study with different filters', parents=[get_args_parser()])
+    arg_parser = argparse.ArgumentParser('', parents=[get_args_parser()])
     args = arg_parser.parse_args()
 
     # passes the commandline argument to the main function
