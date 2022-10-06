@@ -73,9 +73,9 @@ def get_args_parser():
                         help='')
 
     # scheduler settings
-    parser.add_argument('--start_factor', type=float, default=0.3,
+    parser.add_argument('--start_factor', type=float, default=1,
                         help='')
-    parser.add_argument('--end_factor', type=float, default=1,
+    parser.add_argument('--end_factor', type=float, default=0.5,
                         help='')
 
     # seed

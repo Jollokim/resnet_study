@@ -5,6 +5,7 @@
 image_data/
 logs_and_weights/
 HPO_optimizer/
+test.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
