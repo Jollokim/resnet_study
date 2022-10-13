@@ -14,7 +14,7 @@ from torchsummary import summary
 
 import modules.models
 from modules.dataset import TinyImageNetDataset, create_dataloader
-from modules.engine import test_accuracy, train_one_epoch
+from modules.engine import test_accuracy, train_one_epoch, f1Score
 
 
 # function for defining all the commandline parameters
@@ -159,8 +159,10 @@ def main(args):
         # TODO: load model weights
         model.load_state_dict(torch.load(args.pretrained_weights))
         acc = test_accuracy(model, dataset_test, device)
+        f1Score = f1Score(model, dataset_test, device)
 
         print('test accuracy:', acc)
+        print('f1 score:', f1Score)
 
         with open(f'{args.log_path}/{args.name}/test_results.txt', 'a') as f:
             f.write(str(acc))
