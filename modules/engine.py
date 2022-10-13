@@ -92,6 +92,7 @@ def test_accuracy(model: torch.nn.Module, dataset: TinyImageNetDataset, device: 
 
     return accuracy
 
+@torch.no_grad()
 def f1Score(model: torch.nn.Module, dataset: TinyImageNetDataset, device: torch.device):
     model.eval()
 
