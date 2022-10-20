@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 """
-    A script for splitting natural images (NI) dataset into train, valid and test sets.
+    A script for splitting a dataset into train, valid and test sets.
     This wasn't done initial
     train: 70% valid: 20% test: 10%
     randomly picking images for each set

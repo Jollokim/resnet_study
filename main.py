@@ -1,7 +1,6 @@
 import argparse
 import os
 import random
-from tabnanny import verbose
 
 import numpy as np
 import torch
