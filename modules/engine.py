@@ -92,4 +92,38 @@ def test_accuracy(model: torch.nn.Module, dataset: TinyImageNetDataset, device: 
 
     return accuracy
 
+@torch.no_grad()
+def f1Score(model: torch.nn.Module, dataset: TinyImageNetDataset, device: torch.device):
+    model.eval()
 
+    truePositive = 0
+    falsePositive = 0
+    falseNegative = 0
+
+    for i in tqdm(range(len(dataset))):
+        # gets image an corresponding target
+        X = dataset.__getitem__(i)['X']
+        y = dataset.__getitem__(i)['y']
+
+        # puts tensors onto devices
+        X = X.to(device)
+        y = y.to(device)
+
+        # reshapes image to (1, C, H, W), model will only take images in batches, so here batch of one
+        X = X.view(-1, 3, 64, 64)
+
+        # pass image and get output vector
+        output = model(X)
+
+        # check argmax is same as target
+        if torch.argmax(output) == torch.argmax(y):
+            truePositive += 1
+        elif torch.argmax(output) < torch.argmax(y):
+            falseNegative += 1
+        elif torch.argmax(output) > torch.argmax(y):
+            falsePositive += 1
+
+    precision = truePositive / (truePositive + falsePositive)
+    recall = truePositive / (truePositive + falseNegative)
+
+    return 2 * (precision * recall) / (precision + recall)
